@@ -1,0 +1,31 @@
+<?php
+
+/**
+* Implements hook_entity_info().
+*/
+function quiz2_entity_info() {
+  $quiz_info['quiz'] = array(
+      'label' => t('Quiz'),
+      'entity class' => 'Quiz',
+      'controller class' => 'QuizController',
+      'base table' => 'quiz2',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'quiz_id',
+      ),
+      'load hook' => 'quiz_load',
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Default'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'label callback' => 'entity_class_label',
+      'uri callback' => 'entity_class_uri',
+      'creation callback' => 'quiz_create',
+      'module' => 'quiz2',
+      'access callback' => 'quiz_access',
+  );
+
+  return $quiz_info;
+}

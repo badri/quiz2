@@ -1,0 +1,6 @@
+name = Quiz2
+description = Drupal Quiz module refactored to use entities
+core = 7.x
+dependencies[] = entity
+dependencies[] = views
+dependencies[] = relation
