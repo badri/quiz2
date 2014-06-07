@@ -29,3 +29,93 @@ function quiz2_entity_info() {
 
   return $quiz_info;
 }
+
+/**
+ * Implements hook_permission().
+ */
+function quiz2_permission() {
+  $permissions = array(
+    'administer quizzes' => array(
+      'title' => t('Administer all quizzes'),
+    ),
+    'edit any quiz' => array(
+      'title' => t('Edit Quizzes'),
+    ),
+    'view any quiz' => array(
+      'title' => t('View Quizzes'),
+    ),
+  );
+
+  return $permissions;
+}
+
+function quiz_access($op, $quiz = NULL, $account = NULL) {
+  if (user_access('administer quizzes', $account)) {
+    return TRUE;
+  }
+  if (isset($quiz)) {
+    $op = ($op == 'view') ? 'view' : 'edit';
+    if (user_access("$op any quiz", $account)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+function quiz_load($quiz_id, $reset = FALSE) {
+  $quizzes = quiz_load_multiple(array($quiz_id), array(), $reset);
+  return reset($quizzes);
+}
+
+function quiz_load_multiple($quiz_ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('quiz', $quiz_ids, $conditions, $reset);
+}
+
+function quiz_delete(Quiz $quiz) {
+  $quiz->delete();
+}
+
+
+/**
+ * Delete multiple quizzes.
+ *
+ * @param $quiz_ids
+ *   An array of quiz IDs.
+ */
+function quiz_delete_multiple(array $quiz_ids) {
+  entity_get_controller('quiz')->delete($quiz_ids);
+}
+
+/**
+ * Create a quiz object.
+ */
+function quiz_create($values = array()) {
+  return entity_get_controller('quiz')->create($values);
+}
+
+
+/**
+ * Saves a quiz to the database.
+ *
+ * @param $quiz
+ *   The quiz object.
+ */
+function quiz_save(Quiz $quiz) {
+  return $quiz->save();
+}
+
+class Quiz extends Entity {
+
+  public function __construct($values = array()) {
+    parent::__construct($values, 'quiz');
+  }
+
+  protected function defaultLabel() {
+    return $this->name;
+  }
+
+  protected function defaultUri() {
+    return array('path' => 'quiz/' . $this->qid);
+  }
+
+}
