@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * @file
+ * Provides a framework for creating and managing question types.
+ */
+
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function question_ctools_plugin_type() {
+  return array(
+    'question_type' => array(
+      'use hooks' => FALSE,
+      'classes' => array('class'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function question_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'question') {
+    return 'includes/plugins/' . $plugin;
+  }
+}
+
+/**
+ * Get the available type plugins.
+ */
+function question_get_type_plugins() {
+  ctools_include('plugins');
+  $plugins = ctools_get_plugins('question', 'question_type');
+  foreach ($plugins as $key => $plugin) {
+    if (!class_exists($plugin['class'])) {
+      // Invalid class specified.
+      unset($plugins[$key]);
+      continue;
+    }
+    $r = new ReflectionClass($plugin['class']);
+    if (!$r->hasMethod('isValid') || !call_user_func(array($plugin['class'], 'isValid'))) {
+      // Invalid plugin specified.
+      unset($plugins[$key]);
+      continue;
+    }
+  }
+  uasort($plugins, 'ctools_plugin_sort');
+  return $plugins;
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function question_entity_info() {
+  $return = array(
+    'question' => array(
+      'label' => t('Quiz Question'),
+      'controller class' => 'QuestionEntityController',
+      'base table' => 'question',
+      'module' => 'question',
+      'bundle plugin' => array(
+        'plugin type' => 'question_type',
+        // The name of the class to use when loading an invalid bundle.
+        'broken class' => 'QuestionBroken',
+      ),
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'question_id',
+        'bundle' => 'type',
+      ),
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Full'),
+          'custom settings' => TRUE,
+        ),
+      ),
+      'metadata controller class' => 'CommerceLicenseMetadataController',
+      'access callback' => 'question_access',
+      'access arguments' => array(
+        'user key' => 'uid',
+      ),
+    ),
+  );
+  foreach (question_get_type_plugins() as $plugin_name => $plugin) {
+    $return['question']['bundles'][$plugin_name] = array(
+      'label' => $plugin['title'],
+    );
+  }
+  return $return;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function question_theme() {
+  return array(
+    'question' => array(
+      'render element' => 'elements',
+      'template' => 'theme/question',
+    ),
+  );
+}

@@ -1,4 +1,4 @@
-name = Quiz2
+name = Quiz
 description = Drupal Quiz module refactored to use entities
 core = 7.x
 dependencies[] = entity
