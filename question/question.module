@@ -91,7 +91,7 @@ function question_entity_info() {
       ),
     ),
     // The entity that holds information about the entity types
-    'question_type' = array(
+    'question_type' => array(
       'label' => t('Question Type'),
       'entity class' => 'QuestionType',
       'controller class' => 'QuestionTypeController',
@@ -344,4 +344,50 @@ function question_menu_local_tasks_alter(&$data, $router_item, $root_path) {
       );
     }
   }
+}
+
+/**
+ * The class used for question type entities
+ */
+class QuestionType extends Entity {
+
+  public $type;
+  public $label;
+
+  public function __construct($values = array()) {
+    parent::__construct($values, 'question_type');
+  }
+
+}
+
+/**
+ * The Controller for Question entities
+ */
+class QuestionTypeController extends EntityAPIControllerExportable {
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
+   /**
+   * Create a question type - we first set up the values that are specific
+   * to our question type schema but then also go through the EntityAPIController
+   * function.
+   *
+   * @param $type
+   *   The machine-readable type of the question.
+   *
+   * @return
+   *   A question type object with all default fields initialized.
+   */
+  public function create(array $values = array()) {
+    // Add values that are specific to our Question
+    $values += array(
+      'id' => '',
+      'is_new' => TRUE,
+      'data' => '',
+    );
+    $question_type = parent::create($values);
+    return $question_type;
+  }
+
 }
