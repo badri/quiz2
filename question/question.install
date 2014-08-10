@@ -1,0 +1,105 @@
+<?php
+
+//TODO: i18n.
+/**
+ * Implements hook_schema().
+ */
+function question_schema() {
+  $schema['question'] = array(
+    'description' => 'The base table for the question entity type.',
+    'fields' => array(
+      'question_id' => array(
+        'description' => 'The primary identifier for a question.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The question type.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that created this question belongs to.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the question was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('question_id'),
+    'indexes' => array(
+      'uid' => array('uid'),
+      'type' => array('type'),
+    ),
+    'unique keys' => array(
+      'question_id' => array('question_id'),
+    ),
+    'foreign keys' => array(
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  $schema['question_type'] = array(
+    'description' => 'Stores information about defined question types.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique question type identifier.',
+      ),
+      'type' => array(
+        'description' => 'The machine-readable name of this question type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this question type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'The weight of this question type in relation to others.',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this question type.',
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'type' => array('type'),
+    ),
+  );
+
+  return $schema;
+}
+
+//TODO: fill in with appropriate variables
+/**
+ * Implements hook_uninstall().
+ */
+function question_uninstall() {
+  // Delete variable settings.
+  variable_del('commerce_license_product_types');
+  variable_del('commerce_license_line_item_types');
+}

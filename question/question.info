@@ -4,7 +4,7 @@ package = Kalvi
 core = 7.x
 configure = admin/kalvi/config/question
 ; dependencies[] = kalvi_core
-dependencies[] = quiz2
+; dependencies[] = quiz2
 dependencies[] = ctools
 dependencies[] = entity
 dependencies[] = entity_bundle_plugin
@@ -12,3 +12,5 @@ dependencies[] = views_bulk_operations
 
 files[] = includes/question.controller.inc
 files[] = includes/plugins/question_type/base.inc
+files[] = question.admin.inc
+files[] = question_type.admin.inc

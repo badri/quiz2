@@ -57,6 +57,13 @@ abstract class QuestionBase extends Entity implements QuestionInterface, EntityB
   public $uid;
 
   /**
+   * The date (unix timestamp) when the question was created.
+   *
+   * @var integer
+   */
+  public $created;
+
+  /**
    * Constructor.
    *
    * @see Entity::__construct()
