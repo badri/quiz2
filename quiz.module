@@ -3,12 +3,12 @@
 /**
 * Implements hook_entity_info().
 */
-function quiz2_entity_info() {
+function quiz_entity_info() {
   $quiz_info['quiz'] = array(
       'label' => t('Quiz'),
       'entity class' => 'Quiz',
       'controller class' => 'QuizController',
-      'base table' => 'quiz2',
+      'base table' => 'quiz',
       'fieldable' => TRUE,
       'entity keys' => array(
         'id' => 'quiz_id',
@@ -23,7 +23,7 @@ function quiz2_entity_info() {
       'label callback' => 'entity_class_label',
       'uri callback' => 'entity_class_uri',
       'creation callback' => 'quiz_create',
-      'module' => 'quiz2',
+      'module' => 'quiz',
       'access callback' => 'quiz_access',
   );
 
@@ -33,7 +33,7 @@ function quiz2_entity_info() {
 /**
  * Implements hook_permission().
  */
-function quiz2_permission() {
+function quiz_permission() {
   $permissions = array(
     'administer quizzes' => array(
       'title' => t('Administer all quizzes'),
