@@ -32,7 +32,7 @@ function quiz_views_data_alter(&$data) {
     ),
   );
   // This content of this field are decided based on the menu structure that
-  // follows quizs/quiz/%quiz_id/op
+  // follows quizzes/quiz/%quiz_id/op
   $data['quiz']['operations'] = array(
     'field' => array(
       'title' => t('Operations links'),
@@ -50,18 +50,18 @@ function quiz_views_default_views() {
   $views = array();
 
   $view = new view;
-  $view->name = 'quizs';
-  $view->description = 'A list of all quizs';
-  $view->tag = 'quizs';
+  $view->name = 'quizzes';
+  $view->description = 'A list of all quizzes';
+  $view->tag = 'quizzes';
   $view->base_table = 'quiz';
-  $view->human_name = 'Quizs';
+  $view->human_name = 'Quizzes';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 
   /* Display: Master */
   $handler = $view->new_display('default', 'Master', 'default');
-  $handler->display->display_options['title'] = 'Quizs';
+  $handler->display->display_options['title'] = 'Quizzes';
   $handler->display->display_options['access']['type'] = 'perm';
   $handler->display->display_options['access']['perm'] = 'create any quiz type';
   $handler->display->display_options['cache']['type'] = 'none';
@@ -98,7 +98,7 @@ function quiz_views_default_views() {
   $handler->display->display_options['empty']['area']['field'] = 'area';
   $handler->display->display_options['empty']['area']['label'] = 'Empty ';
   $handler->display->display_options['empty']['area']['empty'] = FALSE;
-  $handler->display->display_options['empty']['area']['content'] = 'No quizs have been created yet';
+  $handler->display->display_options['empty']['area']['content'] = 'No quizzes have been created yet';
   /* Field: Quiz: Quiz ID */
   $handler->display->display_options['fields']['quiz_id']['id'] = 'quiz_id';
   $handler->display->display_options['fields']['quiz_id']['table'] = 'quiz';
@@ -178,19 +178,19 @@ function quiz_views_default_views() {
   $handler->display->display_options['fields']['operations']['empty_zero'] = 0;
 
   /* Display: Page */
-  $handler = $view->new_display('page', 'Page', 'quizs_admin_page');
-  $handler->display->display_options['path'] = 'admin/content/quizs/list';
+  $handler = $view->new_display('page', 'Page', 'quizzes_admin_page');
+  $handler->display->display_options['path'] = 'admin/content/quizzes/list';
   $handler->display->display_options['menu']['type'] = 'default tab';
   $handler->display->display_options['menu']['title'] = 'List';
   $handler->display->display_options['menu']['weight'] = '-10';
   $handler->display->display_options['tab_options']['type'] = 'tab';
-  $handler->display->display_options['tab_options']['title'] = 'Quizs';
-  $handler->display->display_options['tab_options']['description'] = 'Manage quizs';
+  $handler->display->display_options['tab_options']['title'] = 'Quizzes';
+  $handler->display->display_options['tab_options']['description'] = 'Manage quizzes';
   $handler->display->display_options['tab_options']['weight'] = '0';
   $handler->display->display_options['tab_options']['name'] = 'management';
-  $translatables['quizs'] = array(
+  $translatables['quizzes'] = array(
     t('Master'),
-    t('Quizs'),
+    t('Quizzes'),
     t('more'),
     t('Apply'),
     t('Reset'),
@@ -201,7 +201,7 @@ function quiz_views_default_views() {
     t('- All -'),
     t('Offset'),
     t('Empty '),
-    t('No quizs have been created yet'),
+    t('No quizzes have been created yet'),
     t('Quiz ID'),
     t('.'),
     t(','),

@@ -26,6 +26,6 @@ class quiz_handler_delete_link_field extends quiz_handler_link_field {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('delete');
     $quiz_id = $values->{$this->aliases['quiz_id']};
 
-    return l($text, 'admin/content/quizs/quiz/' . $quiz_id . '/delete');
+    return l($text, 'admin/content/quizzes/quiz/' . $quiz_id . '/delete');
   }
 }

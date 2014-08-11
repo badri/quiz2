@@ -26,6 +26,6 @@ class quiz_handler_edit_link_field extends quiz_handler_link_field {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('edit');
     $quiz_id = $values->{$this->aliases['quiz_id']};
 
-    return l($text, 'admin/content/quizs/quiz/' . $quiz_id . '/edit');
+    return l($text, 'admin/content/quizzes/quiz/' . $quiz_id . '/edit');
   }
 }

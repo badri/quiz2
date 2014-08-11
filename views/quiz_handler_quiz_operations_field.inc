@@ -18,7 +18,7 @@ class quiz_handler_quiz_operations_field extends views_handler_field {
 
   function render($values) {
 
-    $links = menu_contextual_links('quiz', 'admin/content/quizs/quiz', array($this->get_value($values, 'quiz_id')));
+    $links = menu_contextual_links('quiz', 'admin/content/quizzes/quiz', array($this->get_value($values, 'quiz_id')));
 
     if (!empty($links)) {
       return theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations'))));
