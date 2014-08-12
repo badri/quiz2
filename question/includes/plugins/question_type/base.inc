@@ -95,6 +95,13 @@ abstract class QuestionBase extends Entity implements QuestionInterface, EntityB
     //TODO: any overriding of question save logic goes here.
     parent::save();
   }
+
+  /**
+   * Implements EntityBundlePluginValidableInterface::isValid().
+   */
+  public static function isValid() {
+    return FALSE;
+  }
 }
 
 /**
@@ -108,12 +115,5 @@ class QuestionBroken extends QuestionBase {
    */
   public function __construct($values = array(), $entityType = NULL) {
     throw new QuestionException('Attempted to instantiate a broken question type plugin');
-  }
-
-  /**
-   * Implements EntityBundlePluginValidableInterface::isValid().
-   */
-  public static function isValid() {
-    return FALSE;
   }
 }
