@@ -3,14 +3,5 @@ description = Drupal Quiz module refactored to use entities
 package = Custom
 core = 7.x
 
-dependencies[] = entity
-dependencies[] = views
+dependencies[] = eck
 dependencies[] = relation
-
-files[] = quiz.admin.inc
-files[] = quiz_type.admin.inc
-files[] = views/quiz.views.inc
-files[] = views/quiz_handler_link_field.inc
-files[] = views/quiz_handler_delete_link_field.inc
-files[] = views/quiz_handler_edit_link_field.inc
-files[] = views/quiz_handler_quiz_operations_field.inc

@@ -7,472 +7,146 @@
  */
 
 
-/**
- * Implement hook_entity_info().
- *
- * We define two entities here - the actual entity that will hold our domain
- * specific information and an entity that holds information about the different
- * types of entities. See here: http://drupal.org/node/977380 for a discussion on this
- * choice.
- */
-function quiz_entity_info() {
-  $return['quiz'] = array(
-    'label' => t('Quiz'),
-    // The entity class and controller class extend the classes provided by the
-    // Entity API
-    'entity class' => 'Quiz',
-    'controller class' => 'QuizController',
-    'base table' => 'quiz',
-    'fieldable' => TRUE,
-    'entity keys' => array(
-        'id' => 'quiz_id',
-        'bundle' => 'type',
-    ),
-    // Bundles are defined by the quiz types below
-    'bundles' => array(),
-    // Bundle keys tell the FieldAPI how to extract information from the bundle objects
-    'bundle keys' => array(
-      'bundle' => 'type',
-    ),
-    'label callback' => 'entity_class_label',
-    'uri callback' => 'entity_class_uri',
-    'creation callback' => 'quiz_create',
-    'access callback' => 'quiz_access',
-    'module' => 'quiz',
-    // The information below is used by the QuizUIController (which extends the EntityDefaultUIController)
-    'admin ui' => array(
-      'path' => 'admin/content/quizzes',
-      'file' => 'quiz.admin.inc',
-      'controller class' => 'QuizUIController',
-      'menu wildcard' => '%quiz',
-    ),
-  );
-  // The entity that holds information about the entity types
-  $return['quiz_type'] = array(
-    'label' => t('Quiz Type'),
-    'entity class' => 'QuizType',
-    'controller class' => 'QuizTypeController',
-    'base table' => 'quiz_type',
-    'fieldable' => FALSE,
-    'bundle of' => 'quiz',
-    'exportable' => TRUE,
-    'entity keys' => array(
-      'id' => 'id',
-      'name' => 'type',
-      'label' => 'label',
-    ),
-    'access callback' => 'quiz_type_access',
-    'module' => 'quiz',
-    // Enable the entity API's admin UI.
-    'admin ui' => array(
-      'path' => 'admin/structure/quiz_types',
-      'file' => 'quiz_type.admin.inc',
-      'controller class' => 'QuizTypeUIController',
-    ),
-  );
 
+function quiz_entity_info() {
+  $return = array(
+    // quiz attempt entity to hold a quiz attempt by a user.
+    'quiz_attempt' => array(
+      'label' => t('Quiz Attempt'),
+      'entity class' => 'QuizAttempt',
+      'controller class' => 'QuizAttemptController',
+      'base table' => 'quiz_attempt',
+      'fieldable' => FALSE,
+      // 'exportable' => TRUE,
+      'entity keys' => array(
+        'id' => 'quiz_attempt_id',
+        'user' => 'user',
+        'quiz' => 'quiz',
+      ),
+      'access callback' => 'quiz_attempt_access',
+      'module' => 'question',
+    ),
+  );
   return $return;
 }
 
 
-/**
- * Implements hook_entity_info_alter().
- *
- * We are adding the info about the quiz types via a hook to avoid a recursion
- * issue as loading the quiz types requires the entity info as well.
- *
- * @todo This needs to be improved
- */
-function quiz_entity_info_alter(&$entity_info) {
-  foreach (quiz_get_types() as $type => $info) {
-    $entity_info['quiz']['bundles'][$type] = array(
-      'label' => $info->label,
-      'admin' => array(
-        'path' => 'admin/structure/quiz_types/manage/%quiz_type',
-        'real path' => 'admin/structure/quiz_types/manage/' . $type,
-        'bundle argument' => 4,
-        'access arguments' => array('administer quiz types'),
-      ),
-    );
-  }
+function quiz_attempt_access($op, $type = NULL, $account = NULL) {
+  return user_access('take quiz', $account);
 }
 
 
 /**
- * Implements hook_permission().
- */
-function quiz_permission() {
-  // We set up permisssions to manage entity types, manage all entities and the
-  // permissions for each individual entity
-  $permissions = array(
-    'administer quiz types' => array(
-      'title' => t('Administer quiz types'),
-      'description' => t('Create and delete fields for quiz types, and set their permissions.'),
-    ),
-    'administer quizzes' => array(
-      'title' => t('Administer quizzes'),
-      'description' => t('Edit and delete all quizzes'),
-    ),
-  );
-
-  //Generate permissions per quiz
-  foreach (quiz_get_types() as $type) {
-    $type_name = check_plain($type->type);
-    $permissions += array(
-      "edit any $type_name quiz" => array(
-        'title' => t('%type_name: Edit any quiz', array('%type_name' => $type->label)),
-      ),
-      "view any $type_name quiz" => array(
-        'title' => t('%type_name: View any quiz', array('%type_name' => $type->label)),
-      ),
-    );
-  }
-  return $permissions;
-}
-
-
-/**
- * Determines whether the given user has access to a quiz.
+ * Fetch a question object. Make sure that the wildcard you choose
+ * in the question entity definition fits the function name here.
  *
- * @param $op
- *   The operation being performed. One of 'view', 'update', 'create', 'delete'
- *   or just 'edit' (being the same as 'create' or 'update').
- * @param $quiz
- *   Optionally a quiz or a quiz type to check access for. If nothing is
- *   given, access for all quizzes is determined.
- * @param $account
- *   The user to check for. Leave it to NULL to check for the global user.
- * @return boolean
- *   Whether access is allowed or not.
- */
-function quiz_access($op, $quiz = NULL, $account = NULL) {
-  if (user_access('administer quizzes', $account)) {
-    return TRUE;
-  }
-  if (isset($quiz) && $type_name = $quiz->type) {
-    $op = ($op == 'view') ? 'view' : 'edit';
-    if (user_access("$op any $type_name quiz", $account)) {
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-
-/**
- * Access callback for the entity API.
- */
-function quiz_type_access($op, $type = NULL, $account = NULL) {
-  return user_access('administer quiz types', $account);
-}
-
-
-/**
- * Gets an array of all quiz types, keyed by the type name.
- *
- * @param $type_name
- *   If set, the type with the given name is returned.
- * @return QuizType[]
- *   Depending whether $type isset, an array of quiz types or a single one.
- */
-function quiz_get_types($type_name = NULL) {
-  // entity_load will get the Entity controller for our quiz entity and call the load
-  // function of that object - we are loading entities by name here.
-  $types = entity_load_multiple_by_name('quiz_type', isset($type_name) ? array($type_name) : FALSE);
-  return isset($type_name) ? reset($types) : $types;
-}
-
-
-/**
- * Menu argument loader; Load a quiz type by string.
- *
- * @param $type
- *   The machine-readable name of a quiz type to load.
- * @return
- *   A quiz type array or FALSE if $type does not exist.
- */
-function quiz_type_load($type) {
-  return quiz_get_types($type);
-}
-
-
-/**
- * Fetch a quiz object. Make sure that the wildcard you choose
- * in the quiz entity definition fits the function name here.
- *
- * @param $quiz_id
- *   Integer specifying the quiz id.
+ * @param $question_id
+ *   Integer specifying the question id.
  * @param $reset
  *   A boolean indicating that the internal cache should be reset.
  * @return
- *   A fully-loaded $quiz object or FALSE if it cannot be loaded.
+ *   A fully-loaded $question object or FALSE if it cannot be loaded.
  *
- * @see quiz_load_multiple()
+ * @see question_load_multiple()
  */
-function quiz_load($quiz_id, $reset = FALSE) {
-  $quizzes = quiz_load_multiple(array($quiz_id), array(), $reset);
-  return reset($quizzes);
+function quiz_attempt_load($quiz_attempt_id, $reset = FALSE) {
+  $quiz_attempts = quiz_attempt_load_multiple(array($quiz_attempt_id), array(), $reset);
+  return reset($quiz_attempts);
 }
 
 
 /**
- * Load multiple quizzes based on certain conditions.
+ * Load multiple questions based on certain conditions.
  *
- * @param $quiz_ids
- *   An array of quiz IDs.
+ * @param $question_ids
+ *   An array of question IDs.
  * @param $conditions
- *   An array of conditions to match against the {quiz} table.
+ *   An array of conditions to match against the {question} table.
  * @param $reset
  *   A boolean indicating that the internal cache should be reset.
  * @return
- *   An array of quiz objects, indexed by quiz_id.
+ *   An array of question objects, indexed by question_id.
  *
  * @see entity_load()
- * @see quiz_load()
+ * @see question_load()
  */
-function quiz_load_multiple($quiz_ids = array(), $conditions = array(), $reset = FALSE) {
-  return entity_load('quiz', $quiz_ids, $conditions, $reset);
+function quiz_attempt_load_multiple($quiz_attempts = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('quiz_attempt', $quiz_attempts, $conditions, $reset);
 }
 
 
 /**
- * Deletes a quiz.
+ * Deletes a question.
  */
-function quiz_delete(Quiz $quiz) {
-  $quiz->delete();
+function quiz_attempt_delete(QuizAttempt $quiz_attempt) {
+  $quiz_attempt->delete();
 }
 
 
 /**
- * Delete multiple quizzes.
+ * Delete multiple questions.
  *
- * @param $quiz_ids
- *   An array of quiz IDs.
+ * @param $question_ids
+ *   An array of question IDs.
  */
-function quiz_delete_multiple(array $quiz_ids) {
-  entity_get_controller('quiz')->delete($quiz_ids);
+function quiz_attempt_delete_multiple(array $quiz_attempts) {
+  entity_get_controller('quiz_attempt')->delete($quiz_attempts);
 }
 
 
 /**
- * Create a quiz object.
+ * Create a question object.
  */
-function quiz_create($values = array()) {
-  return entity_get_controller('quiz')->create($values);
+function quiz_attempt_create($values = array()) {
+  return entity_get_controller('quiz_attempt')->create($values);
 }
 
 
 /**
- * Saves a quiz to the database.
+ * Saves a quiz attempt to the database.
  *
- * @param $quiz
- *   The quiz object.
+ * @param $question
+ *   The question object.
  */
-function quiz_save(Quiz $quiz) {
-  return $quiz->save();
+function quiz_attempt_save(QuizAttempt $quiz_attempt) {
+  return $quiz_attempt->save();
 }
 
 
-/**
- * Saves a quiz type to the db.
- */
-function quiz_type_save(QuizType $type) {
-  $type->save();
-}
+class QuizAttempt extends Entity {
 
+  public $user;
+  public $quiz;
 
-/**
- * Deletes a quiz type from the db.
- */
-function quiz_type_delete(QuizType $type) {
-  $type->delete();
-}
-
-
-/**
- * URI callback for quizzes
- */
-function quiz_uri(Quiz $quiz){
-  return array(
-    'path' => 'quiz/' . $quiz->quiz_id,
-  );
-}
-
-
-/**
- * Menu title callback for showing individual entities
- */
-function quiz_page_title(Quiz $quiz){
-  return $quiz->name;
-}
-
-
-/**
- * Sets up content to show an individual quiz
- * @todo - get rid of drupal_set_title();
- */
-function quiz_page_view($quiz, $view_mode = 'full') {
-  $controller = entity_get_controller('quiz');
-  $content = $controller->view(array($quiz->quiz_id => $quiz));
-  drupal_set_title($quiz->name);
-  return $content;
-}
-
-
-/**
- * Implements hook_views_api().
- */
-function quiz_views_api() {
-  return array(
-    'api' => 3,
-    'path' => drupal_get_path('module', 'quiz') . '/views',
-  );
-}
-
-
-/**
- * Implement hook_theme().
- */
-function quiz_theme() {
-  return array(
-    'quiz_add_list' => array(
-      'variables' => array('content' => array()),
-      'file' => 'quiz.admin.inc',
-    ),
-    'quiz' => array(
-      'render element' => 'elements',
-      'template' => 'quiz',
-    ),
-  );
-}
-
-
-/**
- * Implements hook_menu_local_tasks_alter().
- */
-function quiz_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-  // Add action link 'admin/structure/quizzes/add' on 'admin/structure/quizzes'.
-  if ($root_path == 'admin/content/quizzes') {
-    $item = menu_get_item('admin/content/quizzes/add');
-    if ($item['access']) {
-      $data['actions']['output'][] = array(
-        '#theme' => 'menu_local_action',
-        '#link' => $item,
-      );
-    }
-  }
-}
-
-
-/**
- * The class used for quiz entities
- */
-class Quiz extends Entity {
+  public $start_time;
+  public $end_time;
 
   public function __construct($values = array()) {
-    parent::__construct($values, 'quiz');
+    parent::__construct($values, 'quiz_attempt');
   }
-
-  protected function defaultLabel() {
-    return $this->name;
-  }
-
-  protected function defaultUri() {
-    return array('path' => 'quiz/' . $this->quiz_id);
-  }
-
-
 }
 
 
-/**
- * The class used for quiz type entities
- */
-class QuizType extends Entity {
-
-  public $type;
-  public $label;
-
-  public function __construct($values = array()) {
-    parent::__construct($values, 'quiz_type');
-  }
-
-}
-
-
-/**
- * The Controller for Quiz entities
- */
-class QuizController extends EntityAPIController {
+class QuizAttemptController extends EntityAPIControllerExportable {
   public function __construct($entityType) {
     parent::__construct($entityType);
   }
 
-
-  /**
-   * Create a quiz - we first set up the values that are specific
-   * to our quiz schema but then also go through the EntityAPIController
-   * function.
-   *
-   * @param $type
-   *   The machine-readable type of the quiz.
-   *
-   * @return
-   *   A quiz object with all default fields initialized.
-   */
   public function create(array $values = array()) {
-    // Add values that are specific to our Quiz
+    // Add values that are specific to our Question
     $values += array(
-      'quiz_id' => '',
+      'quiz_attempt_id' => '',
       'is_new' => TRUE,
-      'title' => '',
-      'created' => '',
-      'changed' => '',
     );
-
-    $quiz = parent::create($values);
-    return $quiz;
-  }
-
-  /**
-   * Overriding the buldContent function to add entity specific fields
-   */
-  public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
-    $content = parent::buildContent($entity, $view_mode, $langcode, $content);
-    return $content;
+    $quiz_attempt = parent::create($values);
+    return $quiz_attempt;
   }
 
 }
 
-
 /**
- * The Controller for Quiz entities
+ * Implement hook_entity_info_alter().
  */
-class QuizTypeController extends EntityAPIControllerExportable {
-  public function __construct($entityType) {
-    parent::__construct($entityType);
-  }
-
-   /**
-   * Create a quiz type - we first set up the values that are specific
-   * to our quiz type schema but then also go through the EntityAPIController
-   * function.
-   *
-   * @param $type
-   *   The machine-readable type of the quiz.
-   *
-   * @return
-   *   A quiz type object with all default fields initialized.
-   */
-  public function create(array $values = array()) {
-    // Add values that are specific to our Quiz
-    $values += array(
-      'id' => '',
-      'is_new' => TRUE,
-      'data' => '',
-    );
-    $quiz_type = parent::create($values);
-    return $quiz_type;
-  }
-
+function quiz_entity_info_alter(&$entity_info) {
+  //TODO: add support for revisions
 }
