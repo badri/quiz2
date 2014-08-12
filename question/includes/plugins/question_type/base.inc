@@ -100,7 +100,7 @@ abstract class QuestionBase extends Entity implements QuestionInterface, EntityB
    * Implements EntityBundlePluginValidableInterface::isValid().
    */
   public static function isValid() {
-    return FALSE;
+    return TRUE;
   }
 }
 
