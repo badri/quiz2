@@ -1,6 +1,0 @@
-name = Multichoice Question type
-description = Provides multichoice question type for Quiz.
-core = 7.x
-package = Kalvi
-dependencies[] = question
-dependencies[] = quiz

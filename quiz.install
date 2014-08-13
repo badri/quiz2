@@ -11,10 +11,8 @@
  * Implements hook_schema().
  */
 function quiz_schema() {
-  $schema = array();
-
-  $schema['quiz'] = array(
-    'description' => 'The base table for quiz entities.',
+  $schema['quiz_attempt'] = array(
+    'description' => 'The base table for quiz attempts.',
     'fields' => array(
       'quiz_attempt_id' => array(
         'description' => 'Primary Key: Identifier for a quiz.',
@@ -45,6 +43,21 @@ function quiz_schema() {
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
+      ),
+      'questions' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+        'serialize' => TRUE,
+        'description' => 'array which store the order of questions.',
+      ),
+      'is_complete' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Whether the quiz attempt is complete or not. (0 = incomplete, 1 = complete)',
       ),
     ),
     'primary key' => array('quiz_attempt_id'),

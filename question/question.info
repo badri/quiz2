@@ -9,8 +9,3 @@ dependencies[] = ctools
 dependencies[] = entity
 dependencies[] = entity_bundle_plugin
 dependencies[] = views_bulk_operations
-
-files[] = includes/question.controller.inc
-files[] = includes/plugins/question_type/base.inc
-files[] = question.admin.inc
-files[] = question_type.admin.inc

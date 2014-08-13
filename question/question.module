@@ -127,28 +127,6 @@ function question_entity_info() {
 }
 
 /**
- * Implement hook_theme().
- */
-function question_theme() {
-  return array(
-    'question_add_list' => array(
-      'variables' => array('content' => array()),
-      'file' => 'question.admin.inc',
-    ),
-    'question' => array(
-      'render element' => 'elements',
-      'template' => 'theme/question',
-    ),
-   'question_sample_data' => array(
-      'variables' => array('question_sample_data', 'question' => NULL),
-      'template' => 'theme/question-sample-data',
-    ),
-
-
-  );
-}
-
-/**
  * Determines whether the given user has access to a question.
  *
  * @param $op

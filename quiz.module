@@ -30,6 +30,17 @@ function quiz_entity_info() {
   return $return;
 }
 
+/**
+ * Implements hook_permission().
+ */
+function quiz_permission() {
+  return array(
+    'take quiz' => array(
+      'title' => t('Take Quizzes'),
+    ),
+  );
+}
+
 
 function quiz_attempt_access($op, $type = NULL, $account = NULL) {
   return user_access('take quiz', $account);
@@ -121,6 +132,9 @@ class QuizAttempt extends Entity {
   public $start_time;
   public $end_time;
 
+  public $is_complete;
+  public $questions;
+
   public function __construct($values = array()) {
     parent::__construct($values, 'quiz_attempt');
   }
@@ -149,4 +163,20 @@ class QuizAttemptController extends EntityAPIControllerExportable {
  */
 function quiz_entity_info_alter(&$entity_info) {
   //TODO: add support for revisions
+}
+
+
+/**
+ * Implement hook_entity_property_info().
+ */
+function quiz_entity_property_info() {
+  $info = array();
+  $properties = &$info['quiz_attempt']['properties'];
+
+  $properties['questions'] = array(
+    'label' => t("Quiz Questions"),
+    'type' => 'list<question>',
+    'description' => t("The list of questions with order for this quiz attempt."),
+  );
+  return $info;
 }
