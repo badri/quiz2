@@ -11,7 +11,7 @@
  */
 function question_ctools_plugin_type() {
   return array(
-    'question_type' => array(
+    'question_attempt_type' => array(
       'use hooks' => FALSE,
       'classes' => array('class'),
     ),
@@ -32,7 +32,7 @@ function question_ctools_plugin_directory($module, $plugin) {
  */
 function question_get_type_plugins() {
   ctools_include('plugins');
-  $plugins = ctools_get_plugins('question', 'question_type');
+  $plugins = ctools_get_plugins('question', 'question_attempt_type');
   foreach ($plugins as $key => $plugin) {
     if (!class_exists($plugin['class'])) {
       // Invalid class specified.
@@ -58,19 +58,19 @@ function question_get_type_plugins() {
  */
 function question_entity_info() {
   $return = array(
-    'question' => array(
-      'label' => t('Quiz Question'),
-      'controller class' => 'QuestionEntityController',
-      'base table' => 'question',
+    'question_attempt' => array(
+      'label' => t('Question Type'),
+      //TODO: we're not inheriting it yet
+      'controller class' => 'EntityBundlePluginEntityController',
+      'base table' => 'question_attempt',
       'module' => 'question',
       'bundle plugin' => array(
-        'plugin type' => 'question_type',
-        // The name of the class to use when loading an invalid bundle.
-        'broken class' => 'QuestionBroken',
+        'plugin type' => 'question_attempt_type',
+        'broken class' => 'QuestionAttemptBroken',
       ),
       'fieldable' => TRUE,
       'entity keys' => array(
-        'id' => 'question_id',
+        'id' => 'question_attempt_id',
         'bundle' => 'type',
       ),
       'view modes' => array(
@@ -78,43 +78,14 @@ function question_entity_info() {
           'label' => t('Full'),
           'custom settings' => TRUE,
         ),
+        'line_item' => array(
+          'label' => t('Line item summary'),
+          'custom settings' => TRUE,
+        ),
       ),
-      'access callback' => 'question_access',
+      'access callback' => 'question_attempt_access',
       'access arguments' => array(
         'user key' => 'uid',
-      ),
-      // Bundles are defined by the quiz types below
-      'label callback' => 'entity_class_label',
-      'uri callback' => 'entity_class_uri',
-      // 'creation callback' => 'question_create',
-      'admin ui' => array(
-        'path' => 'admin/content/questions',
-        'file' => 'question.admin.inc',
-        'controller class' => 'QuestionUIController',
-        'menu wildcard' => '%question',
-      ),
-    ),
-    // The entity that holds information about the entity types
-    'question_type' => array(
-      'label' => t('Question Type'),
-      'entity class' => 'QuestionType',
-      'controller class' => 'QuestionTypeController',
-      'base table' => 'question_type',
-      'fieldable' => FALSE,
-      'bundle of' => 'question',
-      'exportable' => TRUE,
-      'entity keys' => array(
-        'id' => 'id',
-        'name' => 'type',
-        'label' => 'label',
-      ),
-      'access callback' => 'question_type_access',
-      'module' => 'question',
-      // Enable the entity API's admin UI.
-      'admin ui' => array(
-        'path' => 'admin/structure/question_types',
-        'file' => 'question_type.admin.inc',
-        'controller class' => 'QuestionTypeUIController',
       ),
     ),
   );
@@ -127,249 +98,76 @@ function question_entity_info() {
 }
 
 /**
- * Determines whether the given user has access to a question.
- *
- * @param $op
- *   The operation being performed. One of 'view', 'update', 'create', 'delete'
- *   or just 'edit' (being the same as 'create' or 'update').
- * @param $question
- *   Optionally a question or a question type to check access for. If nothing is
- *   given, access for all questions is determined.
- * @param $account
- *   The user to check for. Leave it to NULL to check for the global user.
- * @return boolean
- *   Whether access is allowed or not.
+ * Implements hook_permission().
  */
-function question_access($op, $question = NULL, $account = NULL) {
-  if (user_access('administer questions', $account)) {
-    return TRUE;
-  }
-  if (isset($question) && $type_name = $question->type) {
-    $op = ($op == 'view') ? 'view' : 'edit';
-    if (user_access("$op any $type_name question", $account)) {
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-
-/**
- * Access callback for the entity API.
- */
-function question_type_access($op, $type = NULL, $account = NULL) {
-  return user_access('administer question types', $account);
-}
-
-/**
- * Gets an array of all question types, keyed by the type name.
- *
- * @param $type_name
- *   If set, the type with the given name is returned.
- * @return QuestionType[]
- *   Depending whether $type isset, an array of question types or a single one.
- */
-function question_get_types($type_name = NULL) {
-  // entity_load will get the Entity controller for our question entity and call the load
-  // function of that object - we are loading entities by name here.
-  $types = entity_load_multiple_by_name('question_type', isset($type_name) ? array($type_name) : FALSE);
-  return isset($type_name) ? reset($types) : $types;
-}
-
-
-/**
- * Menu argument loader; Load a question type by string.
- *
- * @param $type
- *   The machine-readable name of a question type to load.
- * @return
- *   A question type array or FALSE if $type does not exist.
- */
-function question_type_load($type) {
-  return question_get_types($type);
-}
-
-
-/**
- * Fetch a question object. Make sure that the wildcard you choose
- * in the question entity definition fits the function name here.
- *
- * @param $question_id
- *   Integer specifying the question id.
- * @param $reset
- *   A boolean indicating that the internal cache should be reset.
- * @return
- *   A fully-loaded $question object or FALSE if it cannot be loaded.
- *
- * @see question_load_multiple()
- */
-function question_load($question_id, $reset = FALSE) {
-  $questions = question_load_multiple(array($question_id), array(), $reset);
-  return reset($questions);
-}
-
-
-/**
- * Load multiple questions based on certain conditions.
- *
- * @param $question_ids
- *   An array of question IDs.
- * @param $conditions
- *   An array of conditions to match against the {question} table.
- * @param $reset
- *   A boolean indicating that the internal cache should be reset.
- * @return
- *   An array of question objects, indexed by question_id.
- *
- * @see entity_load()
- * @see question_load()
- */
-function question_load_multiple($question_ids = array(), $conditions = array(), $reset = FALSE) {
-  return entity_load('question', $question_ids, $conditions, $reset);
-}
-
-
-/**
- * Deletes a question.
- */
-function question_delete(Question $question) {
-  $question->delete();
-}
-
-
-/**
- * Delete multiple questions.
- *
- * @param $question_ids
- *   An array of question IDs.
- */
-function question_delete_multiple(array $question_ids) {
-  entity_get_controller('question')->delete($question_ids);
-}
-
-
-/**
- * Create a question object.
- */
-function question_create($values = array()) {
-  return entity_get_controller('question')->create($values);
-}
-
-
-/**
- * Saves a question to the database.
- *
- * @param $question
- *   The question object.
- */
-function question_save(Question $question) {
-  return $question->save();
-}
-
-
-/**
- * Saves a question type to the db.
- */
-function question_type_save(QuestionType $type) {
-  $type->save();
-}
-
-
-/**
- * Deletes a question type from the db.
- */
-function question_type_delete(QuestionType $type) {
-  $type->delete();
-}
-
-
-/**
- * URI callback for questions
- */
-function question_uri(Question $question){
+function question_permission() {
   return array(
-    'path' => 'question/' . $question->question_id,
+    'attempt quiz' => array(
+      'title' => t('Attempt Quiz'),
+    ),
   );
 }
 
 
-/**
- * Menu title callback for showing individual entities
- */
-function question_page_title(Question $question){
-  return $question->name;
+function questuib_attempt_access($op, $question_attempt = NULL, $account = NULL) {
+  if (!isset($account)) {
+    $account = $GLOBALS['user'];
+  }
+  //TODO:only give access if the user has access to take the quiz
+  // or is the administrator of the quiz
+  return TRUE;
 }
 
 
 /**
- * Sets up content to show an individual question
- * @todo - get rid of drupal_set_title();
+ * Implement hook_entity_property_info().
  */
-function question_page_view($question, $view_mode = 'full') {
-  $controller = entity_get_controller('question');
-  $content = $controller->view(array($question->question_id => $question));
-  drupal_set_title($question->name);
-  return $content;
-}
+function question_entity_property_info() {
+  $info = array();
+  $properties = &$info['question_attempt']['properties'];
 
-/**
- * Implements hook_menu_local_tasks_alter().
- */
-function question_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-  // Add action link 'admin/structure/questions/add' on 'admin/structure/questions'.
-  if ($root_path == 'admin/content/questions') {
-    $item = menu_get_item('admin/content/questions/add');
-    if ($item['access']) {
-      $data['actions']['output'][] = array(
-        '#theme' => 'menu_local_action',
-        '#link' => $item,
-      );
-    }
-  }
-}
+  $properties['question_attempt_id'] = array(
+    'type' => 'integer',
+    'label' => t('Question Attempt ID'),
+    'description' => t('Question Attempt id.'),
+    'validation callback' => 'entity_metadata_validate_integer_positive',
+    'schema field' => 'question_attempt_id',
+  );
 
-/**
- * The class used for question type entities
- */
-class QuestionType extends Entity {
+  $properties['type'] = array(
+    'type' => 'token',
+    'label' => t('Type'),
+    'description' => t('The question attempt type'),
+    'options list' => 'QuestionAttemptMetadataController::bundleOptionsList',
+    'setter callback' => 'entity_property_verbatim_set',
+    'required' => TRUE,
+    'schema field' => 'type',
+  );
 
-  public $type;
-  public $label;
+  $properties['uid'] = array(
+    'type' => 'user',
+    'label' => t('Quiz Taker'),
+    'description' => t('The person attempting the quiz.'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'required' => TRUE,
+    'schema field' => 'uid',
+  );
 
-  public function __construct($values = array()) {
-    parent::__construct($values, 'question_type');
-  }
+  $properties['question'] = array(
+    'type' => 'question',
+    'label' => t('Product'),
+    'description' => t('The question id being attempted.'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'required' => TRUE,
+    'schema field' => 'question',
+  );
 
-}
+  $properties['attempted_time'] = array(
+    'type' => 'date',
+    'label' => t('Attempted Time'),
+    'description' => t('The Unix timestamp when the question was attempted.'),
+    'schema field' => 'attempted_time',
+  );
 
-/**
- * The Controller for Question entities
- */
-class QuestionTypeController extends EntityAPIControllerExportable {
-  public function __construct($entityType) {
-    parent::__construct($entityType);
-  }
-
-   /**
-   * Create a question type - we first set up the values that are specific
-   * to our question type schema but then also go through the EntityAPIController
-   * function.
-   *
-   * @param $type
-   *   The machine-readable type of the question.
-   *
-   * @return
-   *   A question type object with all default fields initialized.
-   */
-  public function create(array $values = array()) {
-    // Add values that are specific to our Question
-    $values += array(
-      'id' => '',
-      'is_new' => TRUE,
-      'data' => '',
-    );
-    $question_type = parent::create($values);
-    return $question_type;
-  }
-
+  return $info;
 }
