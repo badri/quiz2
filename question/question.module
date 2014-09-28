@@ -15,6 +15,10 @@ function question_ctools_plugin_type() {
       'use hooks' => FALSE,
       'classes' => array('class'),
     ),
+    'question_type' => array(
+      'use hooks' => FALSE,
+      'classes' => array('class'),
+    ),
   );
 }
 
@@ -28,11 +32,34 @@ function question_ctools_plugin_directory($module, $plugin) {
 }
 
 /**
- * Get the available type plugins.
+ * Get the available question attempt type plugins.
+ */
+function question_attempt_get_type_plugins() {
+  ctools_include('plugins');
+  $plugins = ctools_get_plugins('question', 'question_attempt_type');
+  foreach ($plugins as $key => $plugin) {
+    if (!class_exists($plugin['class'])) {
+      // Invalid class specified.
+      unset($plugins[$key]);
+      continue;
+    }
+    $r = new ReflectionClass($plugin['class']);
+    if (!$r->hasMethod('isValid') || !call_user_func(array($plugin['class'], 'isValid'))) {
+      // Invalid plugin specified.
+      unset($plugins[$key]);
+      continue;
+    }
+  }
+  uasort($plugins, 'ctools_plugin_sort');
+  return $plugins;
+}
+
+/**
+ * Get the available question type plugins.
  */
 function question_get_type_plugins() {
   ctools_include('plugins');
-  $plugins = ctools_get_plugins('question', 'question_attempt_type');
+  $plugins = ctools_get_plugins('question', 'question_type');
   foreach ($plugins as $key => $plugin) {
     if (!class_exists($plugin['class'])) {
       // Invalid class specified.
@@ -59,7 +86,7 @@ function question_get_type_plugins() {
 function question_entity_info() {
   $return = array(
     'question_attempt' => array(
-      'label' => t('Question Type'),
+      'label' => t('Question Attempt Type'),
       //TODO: we're not inheriting it yet
       'controller class' => 'EntityBundlePluginEntityController',
       'base table' => 'question_attempt',
@@ -88,12 +115,49 @@ function question_entity_info() {
         'user key' => 'uid',
       ),
     ),
+    'question' => array(
+      'label' => t('Question Type'),
+      //TODO: we're not inheriting it yet
+      'controller class' => 'EntityBundlePluginEntityController',
+      'base table' => 'question',
+      'module' => 'question',
+      'bundle plugin' => array(
+        'plugin type' => 'question_type',
+        'broken class' => 'QuestionBroken',
+      ),
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'question_id',
+        'bundle' => 'type',
+      ),
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Full'),
+          'custom settings' => TRUE,
+        ),
+        'line_item' => array(
+          'label' => t('Line item summary'),
+          'custom settings' => TRUE,
+        ),
+      ),
+      'access callback' => 'question_access',
+      'access arguments' => array(
+        'user key' => 'uid',
+      ),
+    ),
   );
+  foreach (question_attempt_get_type_plugins() as $plugin_name => $plugin) {
+    $return['question_attempt']['bundles'][$plugin_name] = array(
+      'label' => $plugin['title'],
+    );
+  }
+
   foreach (question_get_type_plugins() as $plugin_name => $plugin) {
     $return['question']['bundles'][$plugin_name] = array(
       'label' => $plugin['title'],
     );
   }
+
   return $return;
 }
 
@@ -109,7 +173,7 @@ function question_permission() {
 }
 
 
-function questuib_attempt_access($op, $question_attempt = NULL, $account = NULL) {
+function question_attempt_access($op, $question_attempt = NULL, $account = NULL) {
   if (!isset($account)) {
     $account = $GLOBALS['user'];
   }
@@ -118,6 +182,13 @@ function questuib_attempt_access($op, $question_attempt = NULL, $account = NULL)
   return TRUE;
 }
 
+function question_access($op, $question = NULL, $account = NULL) {
+  if (!isset($account)) {
+    $account = $GLOBALS['user'];
+  }
+  //TODO:only give access if the user has created this question or is admin
+  return TRUE;
+}
 
 /**
  * Implement hook_entity_property_info().

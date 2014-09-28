@@ -8,14 +8,14 @@
 /**
  * Provide a separate Exception so it can be caught separately.
  */
-class QuestionAttemptException extends Exception { }
+class QuestionException extends Exception { }
 
 /**
- * Basic interface for Quiz QuestionAttempt.
+ * Basic interface for Quiz Question.
  *
  * EntityBundlePluginProvideFieldsInterface also mandates a fields() method.
  */
-interface QuestionAttemptInterface extends EntityBundlePluginProvideFieldsInterface {
+interface QuestionInterface extends EntityBundlePluginProvideFieldsInterface {
 
   /**
    * Returns whether a question response is correct or not
@@ -29,54 +29,46 @@ interface QuestionAttemptInterface extends EntityBundlePluginProvideFieldsInterf
 }
 
 /**
- * Quiz QuestionAttempt base class.
+ * Quiz Question base class.
  *
  * All questions types should inherit this class
  */
-abstract class QuestionAttemptBase extends Entity implements QuestionAttemptInterface, EntityBundlePluginValidableInterface {
+abstract class QuestionBase extends Entity implements QuestionInterface, EntityBundlePluginValidableInterface {
 
   /**
-   * The question attempt id.
+   * The question id.
    *
    * @var integer
    */
-  public $question_attempt_id;
+  public $question_id;
 
   /**
-   * The question attempt type (bundle).
+   * The question type (bundle).
    *
    * @var string
    */
   public $type;
 
   /**
-   * The uid of the question attempter.
+   * The uid of the question creator.
    *
    * @var integer
    */
   public $uid;
 
   /**
-   * The question_id of the question being attempted.
+   * The date (unix timestamp) when the question was created.
    *
    * @var integer
    */
-  public $question;
+  public $created;
 
   /**
-   * The date (unix timestamp) when the question was attempted.
-   *
-   * @var integer
-   */
-  public $attempt_time;
-
-  /**
-   * Question Attempt metadata wrapper.
+   * Question metadata wrapper.
    *
    * @var EntityDrupalWrapper
    */
   public $wrapper;
-
 
   /**
    * Constructor.
@@ -84,7 +76,7 @@ abstract class QuestionAttemptBase extends Entity implements QuestionAttemptInte
    * @see Entity::__construct()
    */
   public function __construct(array $values = array(), $entityType = NULL) {
-    parent::__construct($values, 'question_attempt');
+    parent::__construct($values, 'question');
     $this->wrapper = entity_metadata_wrapper($this->entityType, $this);
   }
 
@@ -93,11 +85,10 @@ abstract class QuestionAttemptBase extends Entity implements QuestionAttemptInte
    */
   static function fields() {
     // solution explanation text should be here.
-    //TODO: remove this
   }
 
   /**
-   * Implements QuestionAttemptInterface::evaluate().
+   * Implements QuestionInterface::evaluate().
    */
   public function evaluate() {
     return FALSE;
@@ -124,12 +115,12 @@ abstract class QuestionAttemptBase extends Entity implements QuestionAttemptInte
  * Broken implementation of a type plugin.
  * Used as a fallback when the actual type plugin can't be loaded.
  */
-class QuestionAttemptBroken extends QuestionAttemptBase {
+class QuestionBroken extends QuestionBase {
 
   /**
    * Throw an exception.
    */
   public function __construct($values = array(), $entityType = NULL) {
-    throw new QuestionAttemptException('Attempted to instantiate a broken question type plugin');
+    throw new QuestionException('Attempted to instantiate a broken question type plugin');
   }
 }
