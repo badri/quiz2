@@ -116,7 +116,7 @@ abstract class QuestionAttemptBase extends Entity implements QuestionAttemptInte
    * Implements EntityBundlePluginValidableInterface::isValid().
    */
   public static function isValid() {
-    return FALSE;
+    return TRUE;
   }
 }
 

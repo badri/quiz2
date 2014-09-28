@@ -88,9 +88,9 @@ abstract class QuestionBase extends Entity implements QuestionInterface, EntityB
   }
 
   /**
-   * Implements QuestionInterface::evaluate().
+   * Implements QuestionInterface::render().
    */
-  public function evaluate() {
+  public function render() {
     return FALSE;
   }
 
@@ -107,7 +107,7 @@ abstract class QuestionBase extends Entity implements QuestionInterface, EntityB
    * Implements EntityBundlePluginValidableInterface::isValid().
    */
   public static function isValid() {
-    return FALSE;
+    return TRUE;
   }
 }
 

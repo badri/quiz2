@@ -1,0 +1,5 @@
+name = Multichoice
+description = Provides multichoice question type.
+core = 7.x
+package = Kalvi
+dependencies[] = question

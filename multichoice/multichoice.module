@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file
+ * Provides multichoice question type.
+ */
+
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function multichoice_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'question') {
+    return 'plugins/' . $plugin;
+  }
+}
