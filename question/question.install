@@ -47,6 +47,7 @@ function question_schema() {
         'columns' => array('uid' => 'uid'),
       ),
     ),
+  );
   $schema['question'] = array(
     'description' => 'The base table for the question entity type.',
     'fields' => array(

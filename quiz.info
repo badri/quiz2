@@ -3,5 +3,4 @@ description = Drupal Quiz module refactored to use entities
 package = Custom
 core = 7.x
 
-dependencies[] = eck
 dependencies[] = relation
