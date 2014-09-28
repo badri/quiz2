@@ -23,7 +23,7 @@ interface QuestionInterface extends EntityBundlePluginProvideFieldsInterface {
    * @return
    *   TRUE if given question evaluates to true, FALSE otherwise.
    */
-  public function evaluate();
+  public function render();
 
   //TODO: write scoring function or any other common question type interfaces here.
 }
