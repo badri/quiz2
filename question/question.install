@@ -48,43 +48,6 @@ function question_schema() {
       ),
     ),
   );
-  $schema['question'] = array(
-    'description' => 'The base table for the question entity type.',
-    'fields' => array(
-      'question_id' => array(
-        'description' => 'Primary Key: Identifier for a question.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'type' => array(
-        'description' => 'The question type.',
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => TRUE,
-      ),
-      'uid' => array(
-        'description' => 'The {users}.uid that created this question.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'created' => array(
-        'description' => 'The Unix timestamp when the question was created.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-    ),
-    'primary key' => array('question_id'),
-    //TODO: foreign key and index stuff
-    'foreign keys' => array(
-      'owner' => array(
-        'table' => 'users',
-        'columns' => array('uid' => 'uid'),
-      ),
-    ),
-  );
   return $schema;
 }
 
