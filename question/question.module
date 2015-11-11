@@ -31,6 +31,10 @@ function question_entity_info() {
           'custom settings' => TRUE,
         ),
       ),
+      'bundles' => array(),
+      'bundle keys' => array(
+        'bundle' => 'name',
+      ),
       'access callback' => 'question_access',
       'access arguments' => array(
         'user key' => 'uid',
@@ -50,7 +54,7 @@ function question_entity_info() {
     'question_type' => array(
       'label' => t('Question Type'),
       'entity class' => 'QuestionType',
-      'controller class' => 'QuestionTypeController',
+      'controller class' => 'EntityAPIControllerExportable',
       'base table' => 'question_type',
       'fieldable' => FALSE,
       'bundle of' => 'question',
@@ -310,39 +314,6 @@ class QuestionType extends Entity {
   }
 
 }
-
-/**
- * The Controller for Question type entities
- */
-class QuestionTypeController extends EntityAPIControllerExportable {
-  public function __construct($entityType) {
-    parent::__construct($entityType);
-  }
-
-   /**
-   * Create a question type - we first set up the values that are specific
-   * to our question type schema but then also go through the EntityAPIController
-   * function.
-   *
-   * @param $type
-   *   The machine-readable type of the question.
-   *
-   * @return
-   *   A question type object with all default fields initialized.
-   */
-  public function create(array $values = array()) {
-    // Add values that are specific to our Question
-    $values += array(
-      'id' => '',
-      'is_new' => TRUE,
-      'data' => '',
-    );
-    $question_type = parent::create($values);
-    return $question_type;
-  }
-
-}
-
 
 class QuestionController extends EntityAPIController {
   /**
