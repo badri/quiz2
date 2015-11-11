@@ -6,50 +6,6 @@
  */
 
 
-/**
- * Implements hook_ctools_plugin_type().
- */
-function question_ctools_plugin_type() {
-  return array(
-    'question_type' => array(
-      'use hooks' => FALSE,
-      'classes' => array('class'),
-    ),
-  );
-}
-
-/**
- * Implements hook_ctools_plugin_directory().
- */
-function question_ctools_plugin_directory($module, $plugin) {
-  if ($module == 'question') {
-    return 'includes/plugins/' . $plugin;
-  }
-}
-
-/**
- * Get the available type plugins.
- */
-function question_get_type_plugins() {
-  ctools_include('plugins');
-  $plugins = ctools_get_plugins('question', 'question_type');
-  foreach ($plugins as $key => $plugin) {
-    if (!class_exists($plugin['class'])) {
-      // Invalid class specified.
-      unset($plugins[$key]);
-      continue;
-    }
-    $r = new ReflectionClass($plugin['class']);
-    if (!$r->hasMethod('isValid') || !call_user_func(array($plugin['class'], 'isValid'))) {
-      // Invalid plugin specified.
-      unset($plugins[$key]);
-      continue;
-    }
-  }
-  uasort($plugins, 'ctools_plugin_sort');
-  return $plugins;
-}
-
 // TODO:
 // 1. add admin UI
 // 2. views bulk ops interface
@@ -60,14 +16,10 @@ function question_entity_info() {
   $return = array(
     'question' => array(
       'label' => t('Quiz Question'),
-      'controller class' => 'QuestionEntityController',
+      'controller class' => 'QuestionController',
       'base table' => 'question',
+      'entity class' => 'Question',
       'module' => 'question',
-      'bundle plugin' => array(
-        'plugin type' => 'question_type',
-        // The name of the class to use when loading an invalid bundle.
-        'broken class' => 'QuestionBroken',
-      ),
       'fieldable' => TRUE,
       'entity keys' => array(
         'id' => 'question_id',
@@ -118,11 +70,6 @@ function question_entity_info() {
       ),
     ),
   );
-  foreach (question_get_type_plugins() as $plugin_name => $plugin) {
-    $return['question']['bundles'][$plugin_name] = array(
-      'label' => $plugin['title'],
-    );
-  }
   return $return;
 }
 
@@ -365,7 +312,7 @@ class QuestionType extends Entity {
 }
 
 /**
- * The Controller for Question entities
+ * The Controller for Question type entities
  */
 class QuestionTypeController extends EntityAPIControllerExportable {
   public function __construct($entityType) {
@@ -394,4 +341,58 @@ class QuestionTypeController extends EntityAPIControllerExportable {
     return $question_type;
   }
 
+}
+
+
+class QuestionController extends EntityAPIController {
+  /**
+   * Overrides EntityAPIController::query().
+   */
+  public function query($ids, $conditions, $revision_id = FALSE) {
+    $query = $this->buildQuery($ids, $conditions, $revision_id);
+    $result = $query->execute();
+    $result->setFetchMode(PDO::FETCH_ASSOC);
+
+    // Build the resulting objects ourselves, since the standard PDO ways of
+    // doing that are completely useless.
+    $objects = array();
+    foreach ($result as $row) {
+      $row['is_new'] = FALSE;
+      $objects[] = $this->create($row);
+    }
+    return $objects;
+  }
+
+  /**
+   * Overrides EntityAPIController::create().
+   */
+  public function create(array $values = array()) {
+    if (!isset($values[$this->entityInfo['entity keys']['bundle']])) {
+      throw new Exception(t('No bundle provided to MyEntityAPIController::create().'));
+    }
+
+    $bundle = $values[$this->entityInfo['entity keys']['bundle']];
+      // Add is_new property if it is not set.
+    $values += array(
+      'is_new' => TRUE,
+    );
+
+    $default_class = isset($this->entityInfo['entity class']) ? $this->entityInfo['entity class'] : NULL;
+    $class = isset($this->entityInfo['bundles'][$bundle]['entity class']) ? $this->entityInfo['bundles'][$bundle]['entity class'] : $default_class;
+    if (!class_exists($class)) {
+      $class = "Entity";
+    }
+
+    return new $class($values, $this->entityType);
+  }
+
+}
+
+class Question extends Entity {
+  /**
+   * Override this in order to implement a custom default URI.
+   */
+  protected function defaultUri() {
+    return array('path' => 'question/' . $this->identifier());
+  }
 }

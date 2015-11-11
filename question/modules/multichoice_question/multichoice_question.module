@@ -5,11 +5,22 @@
  * Provides multichoice question.
  */
 
-/**
- * Implements hook_ctools_plugin_directory().
- */
-function multichoice_question_ctools_plugin_directory($owner, $plugin_type) {
-  if ($owner == 'question') {
-    return "plugins/$plugin_type";
+function multichoice_question_entity_info_alter(&$entity_info) {
+  $entity_info['question']['bundles']['multichoice'] = array(
+    'label' => 'Multiple Choice',
+    'entity class' => 'MultiChoice');
+}
+
+
+class MultiChoice extends Entity {
+  /**
+   * Override this in order to implement a custom default URI.
+   */
+  protected function defaultUri() {
+    return array('path' => 'question/' . $this->identifier());
+  }
+
+  public function evaluate() {
+    return TRUE;
   }
 }
